@@ -1,4 +1,4 @@
-package org.devzen.springmvcbm;
+package org.devzen.ws_test;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
