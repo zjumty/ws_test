@@ -14,6 +14,11 @@ import java.util.List;
 @RequestMapping("/")
 public class IndexController {
 
+    @RequestMapping(value="/")
+    public String home() {
+        return "quote.ftl";
+    }
+
     @RequestMapping(value="/index", method = RequestMethod.GET)
     public String index(@RequestParam Integer count, Model model) {
         List<FooBean> fooList = new ArrayList<FooBean>();

@@ -106,6 +106,19 @@
 			</exclusions>
 		</dependency>
 
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-api</artifactId>
+            <version>9.2.7.v20150116</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-server</artifactId>
+            <version>9.2.7.v20150116</version>
+            <scope>provided</scope>
+        </dependency>
+
 		<!-- Jackson JSON Processor -->
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>

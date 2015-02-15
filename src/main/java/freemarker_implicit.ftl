@@ -1,0 +1,6 @@
+[#ftl]
+[#-- @implicitly included --]
+[#-- @ftlvariable name="base" type="java.lang.String" --]
+[#-- @ftlvariable name="request" type="javax.servlet.http.HttpServletRequest" --]
+[#-- @ftlvariable name="session" type="javax.servlet.http.HttpSession" --]
+[#-- @ftlvariable name="application" type="javax.servlet.ServletContext" --]
