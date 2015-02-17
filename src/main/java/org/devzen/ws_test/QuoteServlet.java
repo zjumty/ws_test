@@ -24,7 +24,7 @@ public class QuoteServlet extends WebSocketServlet {
         factory.setCreator(new WebSocketCreator() {
             @Override
             public Object createWebSocket(ServletUpgradeRequest request, ServletUpgradeResponse response) {
-                return applicationContext.getBean(WebSocketListener.class);
+                return applicationContext.getBean("quoteSocket", WebSocketListener.class);
             }
         });
     }

@@ -11,7 +11,9 @@
     <mvc:resources mapping="/static/js/*" location="/static/js/"/>
     <mvc:resources mapping="/static/img/*" location="/static/img/"/>
     <mvc:annotation-driven/>
-	<context:component-scan base-package="org.devzen.ws_test" />
+	<context:component-scan base-package="org.devzen.ws_test" use-default-filters="false">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
 
     <mvc:interceptors>
         <bean class="org.devzen.ws_test.AutoModelVariableInterceptor"/>

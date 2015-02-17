@@ -1,12 +1,11 @@
 package org.devzen.ws_test;
 
-import org.springframework.stereotype.Component;
-
 /**
  * User: matianyi
- * Date: 15/2/15
- * Time: 下午10:31
+ * Date: 15/2/16
+ * Time: 下午5:56
  */
-@Component
-public class SessionManager {
+public interface SessionManager {
+    void registerSession(QuoteSession session);
+    void serveSession(SessionExecutor executor);
 }

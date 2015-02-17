@@ -4,7 +4,7 @@
 // Reference: http://tools.ietf.org/html/rfc6455
 
 (function() {
-  
+  debugger;
   if (window.WEB_SOCKET_FORCE_FLASH) {
     // Keeps going.
   } else if (window.WebSocket) {
