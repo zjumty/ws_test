@@ -9,7 +9,7 @@
 	<version>0.0.1</version>
 	<properties>
 		<java-version>1.7</java-version>
-		<org.springframework-version>3.2.0.RELEASE</org.springframework-version>
+		<org.springframework-version>3.2.13.RELEASE</org.springframework-version>
 		<org.aspectj-version>1.6.10</org.aspectj-version>
 		<org.slf4j-version>1.6.1</org.slf4j-version>
 	</properties>
@@ -126,13 +126,26 @@
             <version>1.2.4</version>
         </dependency>
 
-
+        <!-- FreeMarker -->
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
             <version>2.3.20</version>
         </dependency>
 
+
+        <!-- SVG -->
+        <dependency>
+            <groupId>batik</groupId>
+            <artifactId>batik-transcoder</artifactId>
+            <version>1.6-1</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>fop</artifactId>
+                    <groupId>fop</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
 		<!-- File Upload -->
 		<dependency>
