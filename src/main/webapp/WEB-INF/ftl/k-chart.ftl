@@ -6,11 +6,11 @@
         WEB_SOCKET_FORCE_FLASH = true;
     </script>
     <style>
-        #tip{
-            position : absolute;
-            border : 1px solid gray;
-            background-color : #efefef;
-            padding : 3px;
+        #tip {
+            position: absolute;
+            border: 1px solid gray;
+            background-color: #efefef;
+            padding: 3px;
             z-index: 1000;
             /* set this to create word wrap */
             max-width: 200px;
@@ -59,6 +59,8 @@
             var ST_AXIS_X = PAPER.set();
             // y轴标签
             var ST_AXIS_Y = PAPER.set();
+            // 画图层
+            var ST_DRAW = PAPER.set();
 
             // X轴的点
             var SEQUENCE_X = function () {
@@ -96,6 +98,10 @@
             // 坐标能表示的最小价格
             var min_price;
 
+            // 画图模式
+            var draw_mode = false;
+            var draw_panel;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             /**
@@ -113,13 +119,13 @@
              * 添加网格
              */
             var addGridBox = function () {
-                ST_GRID.push(
-                        PAPER.rect(GRID_MARGIN.LEFT + 1, GRID_MARGIN.TOP + 1, GRID_WIDTH, GRID_HEIGHT)
-                                .attr({
-                                    "stroke": "#FFF",
-                                    "stroke-width": "1"
-                                })
-                );
+                var el = PAPER.rect(GRID_MARGIN.LEFT + 1, GRID_MARGIN.TOP + 1, GRID_WIDTH, GRID_HEIGHT)
+                        .attr({
+                            "fill": "#000",
+                            "stroke": "#FFF",
+                            "stroke-width": "1"
+                        });
+                ST_GRID.push(el);
             };
 
             // 横向刻度线
@@ -166,6 +172,59 @@
                 }
             };
 
+            // 画板层
+            var addDrawPanel = function () {
+                draw_panel = PAPER.rect(GRID_MARGIN.LEFT + 1, GRID_MARGIN.TOP + 1, GRID_WIDTH, GRID_HEIGHT)
+                        .attr({
+                            "fill": "#000",
+                            "fill-opacity": 0,
+                            "stroke-width": 0
+                        });
+                draw_panel.toFront();
+                var drawing_elem;
+                var start_point;
+                var drawing = false;
+                draw_panel.mousedown(function (e) {
+                    if (draw_mode) {
+                        start_point = {
+                            x: e.offsetX,
+                            y: e.offsetY
+                        };
+                        drawing = true;
+                        e.preventDefault();
+                    }
+                });
+                $(document).mouseup(function () {
+                    if (draw_mode && drawing) {
+                        drawing = false;
+                        start_point = null;
+                        drawing_elem = null;
+                    }
+                });
+
+                draw_panel.mousemove(function (e) {
+                    if (draw_mode && drawing) {
+                        var x1 = start_point.x;
+                        var y1 = start_point.y;
+                        var x2 = e.offsetX;
+                        var y2 = e.offsetY;
+                        if(!drawing_elem){
+                            if(Math.abs(x1-x2) > 10 || Math.abs(y1-y2) > 10){
+                                drawing_elem = PAPER.path(Raphael.format("M{0},{1}L{2},{3}", start_point.x, start_point.y, start_point.x, start_point.y)).attr({
+                                    "stroke": "#00F",
+                                    "stroke-width": "1"
+                                });
+                                ST_DRAW.push(drawing_elem);
+                            } else {
+                                return false;
+                            }
+                        }
+                        drawing_elem.attr("path", Raphael.format("M{0},{1}L{2},{3}", x1, y1, x2, y2));
+                        e.preventDefault();
+                    }
+                });
+                ST_DRAW.push(draw_panel);
+            };
 
             /**
              * 把报价转换为对应的Y轴坐标
@@ -208,6 +267,8 @@
 
                     el.mouseover((function (d) {
                         return function (e) {
+                            if (draw_mode) return;
+
                             var tip = $("#tip");
                             tip.show();
                             tip.css("left", e.clientX + 20).css("top", e.clientY + 20);
@@ -221,12 +282,16 @@
                         }
                     })(data));
 
-                    el.mousemove(function(e){
+                    el.mousemove(function (e) {
+                        if (draw_mode) return;
+
                         var tip = $("#tip");
                         tip.css("left", e.clientX + 20).css("top", e.clientY + 20);
                     });
 
                     el.mouseout(function () {
+                        if (draw_mode) return;
+
                         var tip = $("#tip");
                         tip.hide();
                     });
@@ -308,6 +373,7 @@
             addAxisXPoints();
             addAxisYPoints();
             addReferenceLine();
+            addDrawPanel();
 
             $.ajax({
                 url: "${base}/k-chart/data",
@@ -355,6 +421,13 @@
                 $("#pagerText").val(JSON.stringify(getImageData()));
             });
 
+            $("#draw").click(function () {
+                draw_mode = $(this).prop("checked");
+                if (draw_mode) {
+                    draw_panel.toFront();
+                }
+            });
+
         });
 
     </script>
@@ -366,6 +439,8 @@
 <div id="k-chart"></div>
 <button id="live">go live</button>
 <button id="showobj">show objects</button>
+<input type="checkbox" id="draw"/><label for="draw">Draw</label>
+
 <form action="${base}/svg2" method="POST">
     <input type="hidden" id="svg2" name="svg"/>
     <button id="btn2">export png</button>
