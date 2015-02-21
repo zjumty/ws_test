@@ -1,6 +1,8 @@
 package org.devzen.ws_test;
 
 import java.math.BigDecimal;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,4 +17,6 @@ public interface PriceService {
      * @return 价格key，value对
      */
     Map<String, BigDecimal> getPrice(String[] priceIds);
+
+    List<CandleStickData> getPriceDatas(String name, Date from, Date to);
 }

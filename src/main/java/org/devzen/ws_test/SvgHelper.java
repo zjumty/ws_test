@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class SvgHelper {
     // 转换dasharray用
-    private static final Map<String, Integer[]> RAPHEAL_DASH_ARRAY;
+    private static final Map<String, Integer[]> RAPHAEL_DASH_ARRAY;
 
     static {
         Map<String, Integer[]> map = new HashMap<>();
@@ -35,7 +35,7 @@ public class SvgHelper {
         map.put("- .", new Integer[]{4, 3, 1, 3});
         map.put("--.", new Integer[]{8, 3, 1, 3});
         map.put("--..", new Integer[]{8, 3, 1, 3, 1, 3});
-        RAPHEAL_DASH_ARRAY = Collections.unmodifiableMap(map);
+        RAPHAEL_DASH_ARRAY = Collections.unmodifiableMap(map);
     }
 
     public static final String KEY_TRANSFORM = "transform";
@@ -68,8 +68,16 @@ public class SvgHelper {
 
         for (int i = 0; i < elems.size(); i++) {
             JSONObject elem = elems.getJSONObject(i);
-            xsw.writeStartElement(elem.getString("type"));
-            addAttributes(xsw, elem.getJSONObject("attrs"));
+            String type = elem.getString("type");
+            JSONObject attrs = elem.getJSONObject("attrs");
+            xsw.writeStartElement(type);
+            addAttributes(xsw, attrs);
+            if("text".equals(type)){
+                xsw.writeStartElement("tspan");
+                xsw.writeAttribute("dy", "4");
+                xsw.writeCharacters(attrs.getString("text"));
+                xsw.writeEndElement();
+            }
             xsw.writeEndElement();
         }
         xsw.writeEndElement();
@@ -92,7 +100,13 @@ public class SvgHelper {
             } else if (KEY_STROKE_DASHARRAY.equals(key)) {
                 xsw.writeAttribute(key, convertDashArray(attrs.getString(key), attrs));
             } else if (KEY_PATH.equals(key)) {
-                xsw.writeAttribute("d", convertPath(attrs.getJSONArray(key)));
+                if (attrs.get(key) instanceof String) {
+                    xsw.writeAttribute("d", attrs.getString(key));
+                } else {
+                    xsw.writeAttribute("d", convertPath(attrs.getJSONArray(key)));
+                }
+            } else if ("font-family".equals(key)) {
+                xsw.writeAttribute(key, "Arial");
             } else {
                 xsw.writeAttribute(key, attrs.getString(key));
             }
@@ -132,7 +146,7 @@ public class SvgHelper {
      * @return 标准的svg的格式
      */
     private static String convertDashArray(String expr, JSONObject attrs) {
-        Integer[] values = RAPHEAL_DASH_ARRAY.get(expr);
+        Integer[] values = RAPHAEL_DASH_ARRAY.get(expr);
         if (values == null) {
             return "";
         }

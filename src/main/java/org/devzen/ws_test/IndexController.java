@@ -3,6 +3,8 @@ package org.devzen.ws_test;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,9 @@ import java.util.*;
 @Controller
 @RequestMapping("/")
 public class IndexController {
+
+    @Autowired
+    private PriceService priceService;
 
     @RequestMapping(value = "/")
     public String home() {
@@ -70,6 +75,18 @@ public class IndexController {
         long e = System.currentTimeMillis();
         System.out.println("time:" + (e - s) + "ms");
 
+    }
+
+    @RequestMapping(value = "/k-chart", method = RequestMethod.GET)
+    public String showKChart() {
+        return "k-chart.ftl";
+    }
+
+    @RequestMapping(value = "/k-chart/data", method = RequestMethod.GET)
+    public @ResponseBody List<CandleStickData> getChartDatas(@RequestParam("name") String name,
+                                                             @RequestParam("from") @DateTimeFormat(pattern = "yyyy-MM-dd") Date from,
+                                                             @RequestParam("to") @DateTimeFormat(pattern = "yyyy-MM-dd") Date to) {
+        return priceService.getPriceDatas(name, from, to);
     }
 
 
