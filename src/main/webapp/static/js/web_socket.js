@@ -4,7 +4,6 @@
 // Reference: http://tools.ietf.org/html/rfc6455
 
 (function() {
-  debugger;
   if (window.WEB_SOCKET_FORCE_FLASH) {
     // Keeps going.
   } else if (window.WebSocket) {
@@ -40,7 +39,7 @@
   /**
    * Our own implementation of WebSocket class using Flash.
    * @param {string} url
-   * @param {array or string} protocols
+   * @param {Array|string} protocols
    * @param {string} proxyHost
    * @param {int} proxyPort
    * @param {string} headers

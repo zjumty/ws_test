@@ -18,8 +18,18 @@
     </style>
     <script type="text/javascript" src="${base}/static/js/raphael.js"></script>
     <script type="text/javascript" src="${base}/static/js/jquery-1.11.2.js"></script>
-
+    <script type="text/javascript" src="${base}/static/js/swfobject.js"></script>
+    <script type="text/javascript" src="${base}/static/js/web_socket.js"></script>
+    <script type="text/javascript" src="${base}/static/js/moment.js"></script>
     <script type="text/javascript">
+        // Let the library know where WebSocketMain.swf is:
+        WEB_SOCKET_SWF_LOCATION = "${base}/static/js/WebSocketMain.swf";
+
+        Raphael.st.removeAll = function () {
+            this.forEach(function (el) {
+                el.remove();
+            });
+        };
 
         $(function () {
             if (Raphael.svg) {
@@ -61,6 +71,8 @@
             var ST_AXIS_Y = PAPER.set();
             // 画图层
             var ST_DRAW = PAPER.set();
+            // 蜡烛图
+            var ST_CANDLE = PAPER.set();
 
             // X轴的点
             var SEQUENCE_X = function () {
@@ -100,8 +112,16 @@
 
             // 画图模式
             var draw_mode = false;
+            // 用来画图的层
             var draw_panel;
 
+            // 价格数据
+            var prices_datas;
+            // 当前报价品种；
+            var current_symbol = "EURUSD";
+            // 蜡烛图的更新周期（过多长时间生产一个新的蜡烛）
+            var candle_stick_cycle = 10 * 1000; // 10秒
+            var last_candle_stick_time = (new Date()).getTime();
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             /**
@@ -208,9 +228,10 @@
                         var y1 = start_point.y;
                         var x2 = e.offsetX;
                         var y2 = e.offsetY;
-                        if(!drawing_elem){
-                            if(Math.abs(x1-x2) > 10 || Math.abs(y1-y2) > 10){
-                                drawing_elem = PAPER.path(Raphael.format("M{0},{1}L{2},{3}", start_point.x, start_point.y, start_point.x, start_point.y)).attr({
+                        var path_string = Raphael.format("M{0},{1}L{2},{3}", x1, y1, x2, y2);
+                        if (!drawing_elem) {
+                            if (Math.abs(x1 - x2) > 10 || Math.abs(y1 - y2) > 10) {
+                                drawing_elem = PAPER.path(path_string).attr({
                                     "stroke": "#00F",
                                     "stroke-width": "1"
                                 });
@@ -219,7 +240,7 @@
                                 return false;
                             }
                         }
-                        drawing_elem.attr("path", Raphael.format("M{0},{1}L{2},{3}", x1, y1, x2, y2));
+                        drawing_elem.attr("path", path_string);
                         e.preventDefault();
                     }
                 });
@@ -236,10 +257,11 @@
             };
 
             // 更新蜡烛图
-            var updateCandleSticks = function (datas) {
+            var updateCandleSticks = function () {
+                ST_CANDLE.removeAll();
                 for (var i = 1; i < SEQUENCE_X.length - 1; i++) {
                     var x = SEQUENCE_X[i];
-                    var data = datas[i - 1];
+                    var data = prices_datas[i - 1];
 
                     var left_top_x = x - CANDLE_STICK_WIDTH / 2;
                     var left_top_y = transformY(Math.max(data.open, data.close));
@@ -260,8 +282,8 @@
                             x, right_bottom_y));
 
                     el.attr({
-                        "fill": data.open < data.close ? "#0F0" : "#F00",
-                        "stroke": data.open < data.close ? "#0F0" : "#F00",
+                        "fill": getStickColor(data),
+                        "stroke": getStickColor(data),
                         "stroke-width": "1"
                     });
 
@@ -296,13 +318,47 @@
                         tip.hide();
                     });
 
-                    ST_GRID.push(el);
+                    ST_CANDLE.push(el);
                 }
+            };
+
+            // 更新最后一个蜡烛（实时图标）
+            var updateLastCandleSticks = function () {
+                var x = SEQUENCE_X[SEQUENCE_X.length - 2];
+                var data = prices_datas[prices_datas.length - 1];
+
+                var left_top_x = x - CANDLE_STICK_WIDTH / 2;
+                var left_top_y = transformY(Math.max(data.open, data.close));
+                var right_bottom_x = x + CANDLE_STICK_WIDTH / 2;
+                var right_bottom_y = transformY(Math.min(data.open, data.close));
+                var high_y = transformY(data.high);
+                var low_y = transformY(data.low);
+                var path_string = Raphael.format("M{0},{1}L{2},{3}L{4},{5}L{6},{7}L{8},{9}M{10},{11}L{12},{13}M{14},{15}L{16},{17}",
+                        left_top_x, left_top_y,
+                        right_bottom_x, left_top_y,
+                        right_bottom_x, right_bottom_y,
+                        left_top_x, right_bottom_y,
+                        left_top_x, left_top_y,
+                        x, high_y,
+                        x, left_top_y,
+                        x, low_y,
+                        x, right_bottom_y);
+
+                var el = ST_CANDLE[ST_CANDLE.length - 1];
+                el.attr({
+                    "path": path_string,
+                    "fill": getStickColor(data),
+                    "stroke": getStickColor(data)
+                });
+            };
+
+            var getStickColor = function(data){
+                return data.open > data.close ? "#0F0" : "#F00";
             };
 
             // 横向的label
             var updateAxisXLabels = function () {
-                ST_AXIS_X.clear();
+                ST_AXIS_X.removeAll();
                 for (var i = 0; i < sequence_times.length; i++) {
                     var x = SEQUENCE_X[i + 1];
                     var y = CANVAS_HEIGHT - GRID_MARGIN.BOTTOM + 12;
@@ -324,7 +380,7 @@
                 }
                 labels.push(p);
 
-                ST_AXIS_Y.clear();
+                ST_AXIS_Y.removeAll();
                 for (var i = 1; i < SEQUENCE_Y.length; i++) {
                     var x = CANVAS_WIDTH - GRID_MARGIN.RIGHT + 30;
                     var y = SEQUENCE_Y[i];
@@ -337,22 +393,22 @@
 
             /**
              * 更新坐标
-             * @param datas
              */
-            var updateCoordinate = function (datas) {
-                if (datas.length == 0) {
+            var updateCoordinate = function () {
+                if (prices_datas == null || prices_datas.length == 0) {
                     return;
                 }
+
                 sequence_times = [];
-                min_price = datas[0].low;
-                max_price = datas[0].high;
-                for (var i = 0; i < datas.length; i++) {
-                    sequence_times.push(datas[i].time);
-                    if (min_price > datas[i].low) {
-                        min_price = datas[i].low;
+                min_price = prices_datas[0].low;
+                max_price = prices_datas[0].high;
+                for (var i = 0; i < prices_datas.length; i++) {
+                    sequence_times.push(prices_datas[i].time);
+                    if (min_price > prices_datas[i].low) {
+                        min_price = prices_datas[i].low;
                     }
-                    if (max_price < datas[i].high) {
-                        max_price = datas[i].high;
+                    if (max_price < prices_datas[i].high) {
+                        max_price = prices_datas[i].high;
                     }
                 }
 
@@ -365,7 +421,75 @@
                 updateAxisYLabels();
             };
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // 初始化报价的通道
+            var initQuoteChannel = function () {
+                var items = ['EURUSD', 'USDJPY', 'USDCNY', 'GBPUSD', 'XAUUSD', 'XAGUSD', 'AUDUSD', 'USDCHF', 'USDCAD', 'NDZUSD'];
+                // Write your code in the same way as for native WebSocket:
+                var ws = new WebSocket("ws://${request.getServerName()}:${request.getServerPort()?string("#####")}/ws_test/quote");
+                ws.onopen = function () {
+                    var i = 0;
+                    ws.send(JSON.stringify({
+                        action: 'set_price_ids',
+                        data: items
+                    }));  // Sends a message.
+                };
+                ws.onmessage = function (e) {
+                    var data = $.parseJSON(e.data);
+                    if (data.result) {
+                        $("#msg").text(data.result);
+                    } else {
+                        onQuoteReceived(data);
+                    }
+                };
+                ws.onclose = function () {
+                    alert("closed");
+                };
+            };
+
+            // 当服务器传来报价时的处理
+            var onQuoteReceived = function (data) {
+                var price = data[current_symbol];
+                // 更新价格信息最后一个
+                var now = new Date();
+
+                var current_time = now.getTime();
+                // 是否改生成一个新的蜡烛
+                if (current_time - last_candle_stick_time > candle_stick_cycle) {
+                    prices_datas.shift();
+                    prices_datas.push({
+                        open: price,
+                        close: price,
+                        high: price,
+                        low: price,
+                        name: current_symbol,
+                        time: moment(now).format("mm:ss")
+                    });
+                    last_candle_stick_time = current_time;
+                    updateCoordinate();
+                    updateCandleSticks();
+                } else {
+                    // 只需要更新最后一个
+                    var price_data = prices_datas[prices_datas.length - 1];
+                    if (price > price_data.high) {
+                        price_data.high = price;
+                    }
+                    if (price < price_data.low) {
+                        price_data.low = price;
+                    }
+                    price_data.close = price;
+                    // 如果价格没有超过Y坐标返回，只需要更新最后一个
+                    if (max_price > price && min_price < price) {
+                        updateLastCandleSticks();
+                    } else {
+                        // 否则还是要更新所有坐标轴和蜡烛
+                        updateCoordinate();
+                        updateCandleSticks();
+                    }
+                }
+            };
+
+
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             // 画图
             addBackground();
@@ -388,13 +512,16 @@
                     to: '2015-01-25'
                 }
             }).done(function (datas) {
-                updateCoordinate(datas);
-                updateCandleSticks(datas);
+                prices_datas = datas;
+                updateCoordinate();
+                updateCandleSticks();
                 console.log(datas);
             });
 
             $("#live").click(function () {
-
+                initQuoteChannel();
+                $(this).prop("disabled", true);
+                //onQuoteReceived({EURUSD:1.13354});
             });
 
             var getImageData = function () {
@@ -428,7 +555,8 @@
                 }
             });
 
-        });
+        })
+        ;
 
     </script>
 </head>
