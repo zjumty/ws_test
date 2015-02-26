@@ -3,6 +3,8 @@ package org.devzen.ws_test;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -16,6 +18,8 @@ import java.util.*;
 @Controller
 @RequestMapping("/")
 public class IndexController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(IndexController.class);
 
     @Autowired
     private PriceService priceService;
@@ -63,7 +67,7 @@ public class IndexController {
         long s = System.currentTimeMillis();
         String svg = SvgHelper.buildSvgFromJson(content);
 
-        System.out.println(svg);
+        LOG.debug(svg);
         TranscoderInput input = new TranscoderInput(new StringReader(svg));
         TranscoderOutput output = new TranscoderOutput(resp.getOutputStream());
 
