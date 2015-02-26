@@ -21,10 +21,18 @@
     <script type="text/javascript" src="${base}/static/js/swfobject.js"></script>
     <script type="text/javascript" src="${base}/static/js/web_socket.js"></script>
     <script type="text/javascript" src="${base}/static/js/moment.js"></script>
+    <!--[if lt IE 9]>
+    <script type="text/javascript" src="${base}/static/js/es5-shim.min.js"></script>
+    <script type="text/javascript" src="${base}/static/js/es5-sham.min.js"></script>
+    <script type="text/javascript" src="${base}/static/js/console-polyfill-0.2.0.js"></script>
+    <script type="text/javascript" src="${base}/static/js/html5shiv.min.js"></script>
+    <![endif]-->
+    <script type="text/javascript" src="${base}/static/js/react-with-addons.js"></script>
+
     <script type="text/javascript">
         // Let the library know where WebSocketMain.swf is:
         WEB_SOCKET_SWF_LOCATION = "${base}/static/js/WebSocketMain.swf";
-
+        WEB_SOCKET_URL = "ws://${request.getServerName()}:${request.getServerPort()?string("#####")}/ws_test/quote";
         Raphael.st.removeAll = function () {
             this.forEach(function (el) {
                 el.remove();
@@ -539,9 +547,10 @@
                 return data;
             };
 
-            $("#btn2").click(function () {
+            $("#btn2").click(function (e) {
                 $("#svg2").val(JSON.stringify(getImageData()));
                 $(this).closest("form").submit();
+                e.preventDefault();
             });
 
             $("#showobj").click(function () {
@@ -555,8 +564,7 @@
                 }
             });
 
-        })
-        ;
+        });
 
     </script>
 </head>
@@ -568,7 +576,7 @@
 <button id="live">go live</button>
 <button id="showobj">show objects</button>
 <input type="checkbox" id="draw"/><label for="draw">Draw</label>
-
+<div id="content"></div>
 <form action="${base}/svg2" method="POST">
     <input type="hidden" id="svg2" name="svg"/>
     <button id="btn2">export png</button>
@@ -576,4 +584,6 @@
 <br/>
 <textarea id="pagerText" cols="100" rows="10"></textarea>
 </body>
+<script type="text/javascript" src="${base}/static/js/trade_service.js?_t=${.now}"></script>
+<script type="text/javascript" src="${base}/static/js/hello.js?_t=${.now}"></script>
 </html>
