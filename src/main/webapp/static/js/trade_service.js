@@ -15,19 +15,15 @@ var TradeService = (function(){
             ws.onclose = function () {
                 alert("closed");
             };
-
-        },
-
-        onQuoteData : function(callback) {
             ws.onmessage = function (e) {
                 var data = $.parseJSON(e.data);
                 if (data.result) {
                     alert(data.result);
                 } else {
-                    callback(data);
+                    this.trigger("quote", data);
                 }
-            };
+            }.bind(this);
         }
-
     };
 })();
+MicroEvent.mixin(TradeService);

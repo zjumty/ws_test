@@ -19,7 +19,7 @@ var SymbolList = React.createClass({displayName: "SymbolList",
     },
 
     componentDidMount: function(){
-        TradeService.onQuoteData(function(data){
+        TradeService.bind("quote", function(data){
             var symbols = [];
             for (var k in data) {
                 if (data.hasOwnProperty(k)) {
@@ -30,7 +30,6 @@ var SymbolList = React.createClass({displayName: "SymbolList",
                 }
             }
             this.setState({symbols: symbols}, null);
-
         }.bind(this));
     },
 
@@ -41,8 +40,12 @@ var SymbolList = React.createClass({displayName: "SymbolList",
             );
         });
 
+        var style = {
+            "float":"left"
+        };
+
         return (
-            React.createElement("table", null, 
+            React.createElement("table", {style: style}, 
                 children
             )
         );
@@ -50,10 +53,66 @@ var SymbolList = React.createClass({displayName: "SymbolList",
 });
 
 var SymbolChart = React.createClass({displayName: "SymbolChart",
+
+    componentDidMount: function(){
+        TradeChart.init(this.refs.container.getDOMNode());
+    },
+
+    render : function() {
+        var style = {
+            //"float":"right"
+        };
+
+        return (
+            React.createElement("div", {style: style}, 
+                React.createElement("div", {id: "tip"}), 
+                React.createElement("p", null, Raphael.svg ? "SVG" : Raphael.vml ? "VML" : "NOT SUPPORT"), 
+                React.createElement("div", {id: "chart", ref: "container"})
+            )
+        );
+    }
+});
+
+var SymbolChartControl = React.createClass({displayName: "SymbolChartControl",
+
+    getInitialState: function() {
+        return {svgContent : ""};
+    },
+
+    onLiveClick : function(event){
+        TradeChart.livingOn();
+        event.target.disabled = "disabled";
+    },
+
+    onShowObjClick : function(event) {
+        this.setState({svgContent : JSON.stringify(TradeChart.getImageData())});
+    },
+
+    onDrawClick: function(event) {
+        TradeChart.beginDraw($(event.target).prop("checked"));
+    },
+
+    onExportClick: function(event) {
+        event.preventDefault();
+        this.setState({svgContent : JSON.stringify(TradeChart.getImageData())}, function(){
+            this.refs.form.getDOMNode().submit();
+        }.bind(this));
+    }, 
+
     render : function() {
         return (
-            React.createElement("div", {id: "chart"})
-        );
+            React.createElement("div", null, 
+                React.createElement("button", {onClick: this.onLiveClick}, "go live"), 
+                React.createElement("button", {id: "showobj", onClick: this.onShowObjClick}, "show objects"), 
+                React.createElement("label", null, React.createElement("input", {type: "checkbox", id: "draw", onClick: this.onDrawClick}), "Draw"), 
+                React.createElement("form", {action: BASE_URL + "/svg2", method: "POST", ref: "form"}, 
+                    React.createElement("input", {type: "hidden", id: "svg2", name: "svg", value: this.state.svgContent}), 
+                    React.createElement("button", {id: "btn2", onClick: this.onExportClick}, "export png")
+                ), 
+                React.createElement("br", null), 
+                React.createElement("textarea", {id: "pagerText", cols: "100", rows: "10", value: this.state.svgContent})
+            )
+        );    
     }
 });
 
@@ -65,16 +124,17 @@ var TradeWorkApp = React.createClass({displayName: "TradeWorkApp",
     },
 
     render: function () {
+        var leftPanelStyle = {
+            float: "right"
+        };
+
         return (
-        	React.createElement("table", null, 
-        		React.createElement("tr", null, 
-                    React.createElement("td", null, 
-                        React.createElement(SymbolList, null)
-                    ), 
-                    React.createElement("td", null, 
-                        React.createElement(SymbolChart, null)
-                    )
-        		)
+        	React.createElement("div", null, 
+                React.createElement(SymbolList, null), 
+                React.createElement("div", {style: leftPanelStyle}, 
+                    React.createElement(SymbolChart, null), 
+                    React.createElement(SymbolChartControl, null)
+                )
         	)
         );
     }
